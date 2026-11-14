@@ -1,11 +1,11 @@
 # Source Control
 
 A native GPUI panel for Git changes, commit history, and repository operations.
-It docks as a 360px column on the right edge of the window the first time
-Herdr sees it while one of your own layouts is shown (not a shipped one such
-as Herdr's `main`; clone it first). It follows the focused terminal's
-folder by default; the repository menu can select another local folder,
-worktree, or connected machine.
+A **Source Control** button in the tab bar opens it in the same side panel
+spot as Files and Changes; the repository's README covers installing and
+wiring it. It follows the focused terminal's folder by default; the
+repository menu can select another local folder, worktree, or connected
+machine.
 
 Drag the divider immediately above **Graph** up or down to resize the changes
 and history areas. Both areas scroll independently. The upper area's height
@@ -59,9 +59,9 @@ branch management, merge, rebase, stash, tags, worktrees, repository selection,
 and clone. Destructive actions have confirmation prompts. Force Push is a
 separate action and uses a lease for the exact remote commit last observed.
 
-The panel refreshes every 10 seconds. Changes made in the diff and merge views
-also trigger a refresh. Actions check that the selected repository, branch,
-and operation still match before changing Git state.
+The panel refreshes every 10 seconds, even while hidden. Changes made in the
+diff and merge views also trigger a refresh. Actions check that the selected
+repository, branch, and operation still match before changing Git state.
 
 ## Merge conflicts
 

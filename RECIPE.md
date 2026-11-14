@@ -1,20 +1,26 @@
 # Source Control
 
-A Git panel docked on the right edge of the Herdr window, in the style of VS
-Code's Source Control view. It shows the repository of the focused terminal:
-its branch, a commit box, the staged, unstaged and conflicted files, and below
-a resizable divider a commit graph with branch, tag and remote badges. Clicking
-a file opens its diff in a dialog where single lines or hunks can be staged,
-unstaged or discarded; a conflicted file opens a three-way merge editor.
+A Git panel in the style of VS Code's Source Control view, opened from a
+Source Control button in the tab bar into the same side panel spot as Files
+and Changes. It shows the repository of the focused terminal: its branch, a
+commit box, the staged, unstaged and conflicted files, and below a resizable
+divider a commit graph with branch, tag and remote badges. Clicking a file
+opens its diff in a dialog where single lines or hunks can be staged, unstaged
+or discarded; a conflicted file opens a three-way merge editor.
 
 ![Source Control](preview.png)
 
 ## What you see
 
-The panel is one column, 360px wide at zoom 1, the full window height, to the
-right of everything else. Its card has a 1px `border` line, 10px rounded
-corners and the theme `background`; text is 12px in the theme's UI font,
-`foreground` color. Top to bottom:
+The tab bar has a **Source Control** button after Files and Changes, drawn
+like them: a 14px branch icon and "Source Control" in 12px, 26px tall, `muted`
+text on `chrome`, or `foreground` on `selected` while its panel is open.
+
+The panel takes the panel column that Files and Changes use: 368px wide by
+default (280px to 900px when dragged), between the tab bar and the status bar.
+Its card has a 1px `border` line, 10px rounded corners and the theme
+`background`; text is 12px in the theme's UI font, `foreground` color. Top to
+bottom:
 
 - **Title bar** (36px): "Source Control" in semibold, then on the right a
   `↻` Refresh button and a `…` More Actions button (24px tall, `muted`
@@ -88,6 +94,11 @@ corners and the theme `background`; text is 12px in the theme's UI font,
 The panel has nothing to do with agent status: working, blocked, done and
 idle agents don't change it. It shows Git state only.
 
+- **Opening and closing**: the Source Control button opens the panel in the
+  panel column and closes Files or Changes; clicking Files or Changes swaps
+  back. Clicking the lit button closes the column. Which panel is open is
+  remembered per space: leave a space with Source Control open and come back,
+  and it is open again.
 - **Which repository**: by default the focused pane's live folder (else the
   space's folder), on the space's machine. Switching space or focusing a
   terminal in another repo switches the panel ("Loading changes…" and
@@ -131,9 +142,30 @@ idle agents don't change it. It shows Git state only.
 ## Built from
 
 - One mod, `mods/source-control/`: `main.js` re-exports the `SourceControl`
-  view from `panel.js`. `mod.json` is `{ "place": "right", "size": 360 }`: no
-  layout file ships with it; Herdr docks one copy at the window's right edge
-  the first time it sees the folder (see Watch out).
+  view from `panel.js`. `mod.json` is `{ "place": "none" }`: Herdr docks
+  nothing by itself, and no layout file ships with it; the panel appears only
+  where the person's layout puts it.
+- Layout wiring, in a personal clone of the shipped `main`: the `stack` with
+  id `panel-body` (inside the `panel` column, under the tab bar in
+  `work-body`) gets a third child after `files` and `changes`:
+  `{ "id": "source-control", "type": "block", "content": { "mod":
+  "source-control" } }`. The block with id `tabs` gets `content.mod`
+  `"tabs-source-control"` instead of `"tabs"`.
+- Tab bar: a clone of the shipped `tabs` mod, made with
+  `herdr-app do mod.clone '{"name":"tabs","as":"tabs-source-control"}'`
+  (the clone rewrites its own `mods/tabs/` asset paths). Two edits in its
+  `main.js`: the line
+  `const enabled = shared("workspace.panels") ?? ["files", "changes"];`
+  becomes
+  `const enabled = [...(shared("workspace.panels") ?? ["files", "changes"]), "source-control"];`,
+  and right after the Changes button line
+  `.when(enabled.includes("changes"), el => el.child(panelButton("changes", "Changes", "mods/changes/changes.svg")))`
+  goes
+  `.child(panelButton("source-control", "Source Control", "mods/source-control/icons/branch.svg"))`.
+  `panelButton(id, ...)` runs `layout.hide {id: "panel"}` when its panel is
+  open, else `layout.select {stack: "panel-body", child: id}` then
+  `layout.show {id: "panel"}`. `enabled` filters both the buttons and the
+  per-space panel restore.
 - The same mod is also the diff and merge dialogs: `panel.js` opens
   `openOverlay({ mod: "source-control", kind: "dialog", width: 1100, height:
   740, props: { mode: "diff", root, on, file, group, hash? } })` and
@@ -175,22 +207,34 @@ idle agents don't change it. It shows Git state only.
   selected lines; and it reads and writes files in the repository it manages
   (the merge editor reads and saves the conflicted file; Discard rewrites
   working-tree files).
-- **Docking on a stock install**: Herdr only docks a new mod while one of the
-  person's own layouts is shown. On a shipped layout (`main`, `terminals`,
-  `win98`) nothing happens and the mod is not marked as seen. So: clone the
-  layout first (`herdr-app do layout.clone '{"name":"main","as":"my-main"}'`,
-  which also switches to it), then copy the folder into `mods/`. The panel
-  appears at once as the last child of the root row, 360px. If the folder was
-  copied while a shipped layout was shown, the dock happens later, when a
-  personal layout is shown, and the column can stay blank until Herdr next
-  rescans mods (another mod folder added or removed, or a restart).
-- **Wiring by hand instead**: in a personal layout, add
+- **Personal copies only**: Herdr's own layouts and mods are read-only and
+  replaced on every start, so the wiring goes into a personal layout (clone
+  `main` with `herdr-app do layout.clone '{"name":"main","as":"my-main"}'`,
+  which also switches to it) and a clone of `tabs`; the shipped tab bar has
+  no Source Control button. The block id must be `"source-control"`: the
+  button's id is the `panel-body` child it selects. Copying the folder alone
+  shows nothing. Saving the layout file takes effect at once, without a
+  restart, so order matters: copy `mods/source-control/` and run `mod.clone`
+  for `tabs-source-control` before the layout points at either; otherwise
+  the layout names a mod that does not exist yet.
+- **The tab bar clone**: Herdr never updates it, so later fixes to `tabs` do
+  not reach it. Its `localStorage` is its own, so it does not inherit the
+  panel choices the shipped tab bar remembered per space; it starts fresh.
+  The welcome's panel toggles know only Files and Changes: turning both off
+  there closes the panel even with Source Control open (the button stays,
+  and clicking it opens it again).
+- **Hidden but alive**: the panel block stays alive while hidden or while
+  another `panel-body` child is shown, and keeps reading Git every 10
+  seconds.
+- **Earlier version installed**: it had `"place": "right"` and docked a
+  block (`"mod": "source-control"`, the last child of the root row). Herdr
+  docks only the first time it sees the folder, so the new `mod.json` does not
+  remove it; delete that block from the layout.
+- **Always-visible column instead**: skip the tab bar clone and both layout
+  edits above (no `panel-body` child, `tabs` stays `"tabs"`), and add
   `{ "id": "source-control", "type": "block", "size": { "px": 360 },
-  "content": { "mod": "source-control" } }` anywhere, e.g. as a child of the
-  root row, or as another child of a panel `stack` next to `files`/`changes`.
-  The mod does not need the shipped tab bar or `shared("workspace.panels")`;
-  the shipped tab bar has no Source Control button, and its Files/Changes
-  buttons don't open this panel.
+  "content": { "mod": "source-control" } }` anywhere in a personal layout,
+  e.g. as a child of the root row.
 - The upper area's starting height is measured on first layout, before Git
   answers, so on a first run the file rows can sit below the fold of the
   upper area (it scrolls); drag the divider once and the height is kept.
@@ -210,10 +254,13 @@ idle agents don't change it. It shows Git state only.
 
 ## Done when
 
-- `herdr-app check mods/source-control` passes.
-- With a personal layout shown, copying the folder into `mods/` shows a 360px
-  "Source Control" column at the window's right edge, and the layout file
-  now contains a block with `"mod": "source-control"`.
+- `herdr-app check ~/.config/herdr-app/mods/source-control` and
+  `herdr-app check ~/.config/herdr-app/mods/tabs-source-control` pass.
+- Copying the folder into `mods/` alone shows nothing. With the layout and
+  tab bar wired, the tab bar shows a Source Control button after Files and
+  Changes; clicking it opens the panel in the panel column, clicking Files
+  then shows Files instead, and clicking the lit button again closes the
+  column.
 - In a repo with a staged file, modified files and an untracked file, the
   panel shows the repo name and branch, Staged Changes with a count and the
   staged file, and Changes listing the modified files (`M`) and untracked
