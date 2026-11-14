@@ -22,7 +22,7 @@ into your own copies:
    `main`, clone it (this also switches to it):
 
    ```sh
-   herdr-app do layout.clone '{"name":"main","as":"my-main"}'
+   herdr-app do layout.clone --name main --as my-main
    ```
 
 2. Copy `mods/source-control` into `~/.config/herdr-app/mods/`. On its own
@@ -31,7 +31,7 @@ into your own copies:
    `mods/tabs-source-control/main.js`:
 
    ```sh
-   herdr-app do mod.clone '{"name":"tabs","as":"tabs-source-control"}'
+   herdr-app do mod.clone --name tabs --as tabs-source-control
    ```
 
    Replace

@@ -152,7 +152,7 @@ idle agents don't change it. It shows Git state only.
   "source-control" } }`. The block with id `tabs` gets `content.mod`
   `"tabs-source-control"` instead of `"tabs"`.
 - Tab bar: a clone of the shipped `tabs` mod, made with
-  `herdr-app do mod.clone '{"name":"tabs","as":"tabs-source-control"}'`
+  `herdr-app do mod.clone --name tabs --as tabs-source-control`
   (the clone rewrites its own `mods/tabs/` asset paths). Two edits in its
   `main.js`: the line
   `const enabled = shared("workspace.panels") ?? ["files", "changes"];`
@@ -209,7 +209,7 @@ idle agents don't change it. It shows Git state only.
   working-tree files).
 - **Personal copies only**: Herdr's own layouts and mods are read-only and
   replaced on every start, so the wiring goes into a personal layout (clone
-  `main` with `herdr-app do layout.clone '{"name":"main","as":"my-main"}'`,
+  `main` with `herdr-app do layout.clone --name main --as my-main`,
   which also switches to it) and a clone of `tabs`; the shipped tab bar has
   no Source Control button. The block id must be `"source-control"`: the
   button's id is the `panel-body` child it selects. Copying the folder alone
